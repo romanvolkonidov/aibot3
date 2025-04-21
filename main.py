@@ -10,17 +10,19 @@ import base64
 from dotenv import load_dotenv
 from datetime import datetime
 import asyncio
-# from deepseek_coder import DeepSeekCoder  # Commented out
+import httpx  # Add this import
 import openai
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# api = DeepSeekCoder()  # Commented out
+# Remove or comment out the deepseek_coder import since we'll use HTTP API
+# import deepseek_coder
+
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CLAUDE_API_KEY = os.getenv('CLAUDE_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-openai.api_key = OPENAI_API_KEY
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')  # Add this line
 
 claude = Anthropic(api_key=CLAUDE_API_KEY)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -28,7 +30,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 AI_OPTIONS = [
     [InlineKeyboardButton("ChatGPT", callback_data="ai_chatgpt")],
     [InlineKeyboardButton("Claude", callback_data="ai_claude")],
-    # [InlineKeyboardButton("DeepSeek", callback_data="ai_deepseek")]  # Commented out
+    [InlineKeyboardButton("DeepSeek", callback_data="ai_deepseek")]  # <-- Uncommented
 ]
 
 MODE_OPTIONS = [
@@ -133,10 +135,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     system_prompt = context.user_data.get("system_prompt", "Provide direct, brief responses. Focus on key points.")
     ai_choice = context.user_data.get("ai_choice", "claude")
 
-    # Remove deepseek option
-    # if ai_choice == "deepseek":
-    #     assistant_message = await get_deepseek_response(user_message, system_prompt)
-    if ai_choice == "chatgpt":
+    if ai_choice == "deepseek":
+        assistant_message = await get_deepseek_response(user_message, system_prompt)  # <-- Uncommented
+    elif ai_choice == "chatgpt":
         assistant_message = await get_chatgpt_response(user_message, system_prompt)
     else:
         assistant_message = await get_claude_response(user_message, system_prompt)
@@ -155,13 +156,33 @@ async def get_claude_response(message_content: str, system_message: str) -> str:
     )
     return response.content[0].text
 
-# Comment out get_deepseek_response since it's not used
-# async def get_deepseek_response(message_content: str, system_message: str) -> str:
-#     loop = asyncio.get_event_loop()
-#     def call_deepseek():
-#         return api(message_content, system_prompt=system_message)
-#     response = await loop.run_in_executor(None, call_deepseek)
-#     return response
+async def get_deepseek_response(message_content: str, system_message: str) -> str:
+    url = "https://api.deepseek.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "deepseek-chat",  # Updated model name
+        "messages": [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": message_content}
+        ],
+        "max_tokens": 1024,
+        "temperature": 0.7,
+        "stream": False
+    }
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+    except Exception as e:
+        logging.error(f"DeepSeek API error: {str(e)}")
+        if hasattr(e, 'response') and e.response is not None:
+            logging.error(f"Response content: {e.response.text}")
+        return "Sorry, there was an error with the DeepSeek API. Please try again or choose a different AI."
 
 async def get_chatgpt_response(message_content: str, system_message: str) -> str:
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -177,6 +198,9 @@ async def get_chatgpt_response(message_content: str, system_message: str) -> str
     )
     return response.choices[0].message.content.strip()
 
+async def error_handler(update, context):
+    logging.error(msg="Exception while handling an update:", exc_info=context.error)
+
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -184,7 +208,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"OK")
 
 def run_health_server():
-    server = HTTPServer(('0.0.0.0', 8080), HealthHandler)
+    server = HTTPServer(('0.0.0.0', 8090), HealthHandler)  # Changed from 8080 to 8090
     server.serve_forever()
 
 def main():
@@ -194,6 +218,7 @@ def main():
         application.add_handler(CommandHandler("reset", reset))
         application.add_handler(CallbackQueryHandler(handle_callback))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        application.add_error_handler(error_handler)  # Add this line
         print("Bot started...")
         threading.Thread(target=run_health_server, daemon=True).start()
         application.run_polling(allowed_updates=Update.ALL_TYPES)
@@ -203,3 +228,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+import deepseek_coder
+print(dir(deepseek_coder))

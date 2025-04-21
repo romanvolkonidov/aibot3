@@ -1,12 +1,16 @@
-# fly.toml app configuration file generated for aibot-wandering-brook-162 on 2025-04-21T18:51:22+03:00
+# fly.toml app configuration file generated for aibot2-cool-river-7434 on 2025-04-21T23:50:19+03:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'aibot2'
+app = 'aibot2-cool-river-7434'
 primary_region = 'jnb'
 
 [build]
+
+[[mounts]]
+  source = 'app_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8080
@@ -20,7 +24,3 @@ primary_region = 'jnb'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-
-[[mounts]]
-  source = "app_data"
-  destination = "/data"
