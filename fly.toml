@@ -22,5 +22,5 @@ primary_region = 'jnb'
   cpus = 1
 
 [[mounts]]
-  source = "data"
+  source = "app_data"
   destination = "/data"
