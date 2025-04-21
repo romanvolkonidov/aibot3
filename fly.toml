@@ -18,6 +18,17 @@ primary_region = 'jnb'
   internal_port = 8080
   force_https = true
   auto_stop_machines = false       # Do not stop machines when idle
-  auto_start_machines = true       # Start machines on demand (still useful)
-  min_machines_running = 2         # Keep 2 machines always running
+  auto_start_machines = true       # Start machines on demand
+  min_machines_running = 1         # Keep 1 machine running (to save cost)
   processes = ['app']
+
+[[services]]
+  internal_port = 8080
+
+  [[services.http_checks]]
+    interval = 10000       # Check every 10 seconds
+    timeout = 2000         # Timeout after 2 seconds
+    grace_period = "10s"   # Grace period before considering unhealthy
+    method = "GET"         
+    path = "/health"       # Health check endpoint
+    protocol = "http"
