@@ -1,0 +1,21 @@
+# flyctl launch added from .gitignore
+**\__pycache__
+**\*.pyc
+**\*.pyo
+**\*.pyd
+**\*.db
+**\*.sqlite3
+**\*.log
+**\*.env
+**\.env.*
+**\venv
+**\env
+**\.idea
+**\.vscode
+**\.DS_Store
+**\*.egg-info
+**\*.bak
+**\*.swp
+**\*.tmp
+# Add any folders/files you don't want in git
+fly.toml
