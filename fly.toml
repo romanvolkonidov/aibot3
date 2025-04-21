@@ -1,0 +1,16 @@
+app = "aibot2"
+
+[build]
+builder = "paketobuildpacks/builder:base"
+buildpacks = ["gcr.io/paketo-buildpacks/python"]
+
+[mounts]
+source = "app_data"
+destination = "/data"
+
+[env]
+PYTHONUNBUFFERED = "1"
+INIT_DB = "true"
+
+[deploy]
+  branch = "feature/message-aggregation"

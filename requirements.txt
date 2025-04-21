@@ -1,0 +1,5 @@
+python-telegram-bot
+python-dotenv
+anthropic
+psycopg2-binary
+sqlalchemy
