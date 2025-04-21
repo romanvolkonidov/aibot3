@@ -1,8 +1,4 @@
-# fly.toml app configuration file generated for aibot3 on 2025-04-21T21:23:45Z
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
+# fly.toml app configuration file
 app = 'aibot3'
 primary_region = 'jnb'
 
@@ -15,20 +11,29 @@ primary_region = 'jnb'
   memory_mb = 1024
 
 [http_service]
-  internal_port = 8080
+  internal_port = 8090
   force_https = true
-  auto_stop_machines = false       # Do not stop machines when idle
-  auto_start_machines = true       # Start machines on demand
-  min_machines_running = 1         # Keep 1 machine running (to save cost)
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
   processes = ['app']
 
 [[services]]
-  internal_port = 8080
+  internal_port = 8090
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
 
   [[services.http_checks]]
-    interval = 10000       # Check every 10 seconds
-    timeout = 2000         # Timeout after 2 seconds
-    grace_period = "10s"   # Grace period before considering unhealthy
-    method = "GET"         
-    path = "/health"       # Health check endpoint
+    interval = 10000         # every 10 seconds
+    timeout = 2000           # 2 seconds max wait
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
     protocol = "http"

@@ -143,6 +143,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         assistant_message = await get_claude_response(user_message, system_prompt)
 
+
     assistant_message = clean_ai_response(assistant_message)  # <--- Add this line
 
     chat_history.append({"role": "assistant", "content": assistant_message})
