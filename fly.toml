@@ -3,7 +3,7 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'aibot-wandering-brook-162'
+app = 'aibot2'
 primary_region = 'jnb'
 
 [build]
