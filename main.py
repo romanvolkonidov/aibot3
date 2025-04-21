@@ -12,10 +12,10 @@ from project_ops import get_user_projects, create_project, set_current_project, 
 from dotenv import load_dotenv
 from datetime import datetime
 import asyncio
-from deepseek_coder import DeepSeekCoder
+# from deepseek_coder import DeepSeekCoder  # Commented out
 import openai
 
-api = DeepSeekCoder()
+# api = DeepSeekCoder()  # Commented out
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CLAUDE_API_KEY = os.getenv('CLAUDE_API_KEY')
@@ -28,7 +28,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 AI_OPTIONS = [
     [InlineKeyboardButton("ChatGPT", callback_data="ai_chatgpt")],
     [InlineKeyboardButton("Claude", callback_data="ai_claude")],
-    [InlineKeyboardButton("DeepSeek", callback_data="ai_deepseek")]
+    # [InlineKeyboardButton("DeepSeek", callback_data="ai_deepseek")]  # Commented out
 ]
 
 MODE_OPTIONS = [
@@ -133,9 +133,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     system_prompt = context.user_data.get("system_prompt", "Provide direct, brief responses. Focus on key points.")
     ai_choice = context.user_data.get("ai_choice", "claude")
 
-    if ai_choice == "deepseek":
-        assistant_message = await get_deepseek_response(user_message, system_prompt)
-    elif ai_choice == "chatgpt":
+    # Remove deepseek option
+    # if ai_choice == "deepseek":
+    #     assistant_message = await get_deepseek_response(user_message, system_prompt)
+    if ai_choice == "chatgpt":
         assistant_message = await get_chatgpt_response(user_message, system_prompt)
     else:
         assistant_message = await get_claude_response(user_message, system_prompt)
@@ -154,12 +155,13 @@ async def get_claude_response(message_content: str, system_message: str) -> str:
     )
     return response.content[0].text
 
-async def get_deepseek_response(message_content: str, system_message: str) -> str:
-    loop = asyncio.get_event_loop()
-    def call_deepseek():
-        return api(message_content, system_prompt=system_message)
-    response = await loop.run_in_executor(None, call_deepseek)
-    return response
+# Comment out get_deepseek_response since it's not used
+# async def get_deepseek_response(message_content: str, system_message: str) -> str:
+#     loop = asyncio.get_event_loop()
+#     def call_deepseek():
+#         return api(message_content, system_prompt=system_message)
+#     response = await loop.run_in_executor(None, call_deepseek)
+#     return response
 
 async def get_chatgpt_response(message_content: str, system_message: str) -> str:
     loop = asyncio.get_event_loop()
