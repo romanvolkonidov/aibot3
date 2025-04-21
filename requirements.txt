@@ -3,3 +3,5 @@ python-dotenv
 anthropic
 psycopg2-binary
 sqlalchemy
+deepseek-coder
+openai
