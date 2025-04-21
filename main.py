@@ -7,13 +7,13 @@ import json
 from pathlib import Path
 import os
 import base64
-from db import SessionLocal, User, Project, UserProject, Conversation, ProjectFile
-from project_ops import get_user_projects, create_project, set_current_project, save_conversation
 from dotenv import load_dotenv
 from datetime import datetime
 import asyncio
 # from deepseek_coder import DeepSeekCoder  # Commented out
 import openai
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # api = DeepSeekCoder()  # Commented out
 load_dotenv()
@@ -164,28 +164,42 @@ async def get_claude_response(message_content: str, system_message: str) -> str:
 #     return response
 
 async def get_chatgpt_response(message_content: str, system_message: str) -> str:
-    loop = asyncio.get_event_loop()
-    def call_openai():
-        response = openai.ChatCompletion.create(
-            model="gpt-4-turbo",  # <-- switched to GPT-4.1
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": message_content}
-            ],
-            max_tokens=1024,
-            temperature=0.7,
-        )
-        return response.choices[0].message.content.strip()
-    return await loop.run_in_executor(None, call_openai)
+    client = openai.OpenAI(api_key=OPENAI_API_KEY)
+    response = await asyncio.to_thread(
+        client.chat.completions.create,
+        model="gpt-4-turbo",
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": message_content}
+        ],
+        max_tokens=1024,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content.strip()
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+def run_health_server():
+    server = HTTPServer(('0.0.0.0', 8080), HealthHandler)
+    server.serve_forever()
 
 def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("reset", reset))
-    application.add_handler(CallbackQueryHandler(handle_callback))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    print("Bot started...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    try:
+        application = Application.builder().token(TELEGRAM_TOKEN).build()
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("reset", reset))
+        application.add_handler(CallbackQueryHandler(handle_callback))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        print("Bot started...")
+        threading.Thread(target=run_health_server, daemon=True).start()
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
+    except Exception as e:
+        logging.exception("Bot failed to start")
+        print(f"Exception: {e}")
 
 if __name__ == '__main__':
     main()
