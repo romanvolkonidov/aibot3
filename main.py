@@ -167,7 +167,7 @@ async def get_chatgpt_response(message_content: str, system_message: str) -> str
     loop = asyncio.get_event_loop()
     def call_openai():
         response = openai.ChatCompletion.create(
-            model="gpt-4.1",  # <-- switched to GPT-4.1
+            model="gpt-4-turbo",  # <-- switched to GPT-4.1
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": message_content}
