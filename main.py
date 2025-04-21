@@ -14,6 +14,7 @@ import httpx  # Add this import
 import openai
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import re
 
 # Remove or comment out the deepseek_coder import since we'll use HTTP API
 # import deepseek_coder
@@ -142,6 +143,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         assistant_message = await get_claude_response(user_message, system_prompt)
 
+    assistant_message = clean_ai_response(assistant_message)  # <--- Add this line
+
     chat_history.append({"role": "assistant", "content": assistant_message})
     await update.message.reply_text(assistant_message)
 
@@ -197,6 +200,14 @@ async def get_chatgpt_response(message_content: str, system_message: str) -> str
         temperature=0.7,
     )
     return response.choices[0].message.content.strip()
+
+def clean_ai_response(text: str) -> str:
+    # Remove excessive markdown headers and stars
+    text = re.sub(r'[#*]{2,}', '', text)
+    # Replace multiple newlines with a single newline
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    # Strip leading/trailing whitespace
+    return text.strip()
 
 async def error_handler(update, context):
     logging.error(msg="Exception while handling an update:", exc_info=context.error)
